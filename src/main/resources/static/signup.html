@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>회원가입 - My Blog</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', sans-serif; background: #f9f9f9; color: #333; display: flex; flex-direction: column; min-height: 100vh; }
+    header { background: #fff; border-bottom: 1px solid #eee; padding: 16px 0; text-align: center; }
+    header h1 { font-size: 24px; font-weight: 700; cursor: pointer; }
+    header h1:hover { color: #555; }
+    .container { max-width: 420px; margin: 60px auto; padding: 0 20px; width: 100%; }
+    .box { background: #fff; border: 1px solid #eee; border-radius: 12px; padding: 36px; }
+    .box h2 { font-size: 20px; font-weight: 700; margin-bottom: 24px; }
+    input { width: 100%; border: 1px solid #ddd; border-radius: 8px; padding: 11px 14px; font-size: 14px; margin-bottom: 12px; outline: none; }
+    input:focus { border-color: #4a90e2; }
+    button { width: 100%; background: #222; color: #fff; border: none; border-radius: 8px; padding: 12px; font-size: 14px; cursor: pointer; margin-top: 4px; }
+    button:hover { background: #444; }
+    .link { text-align: center; margin-top: 16px; font-size: 13px; color: #888; }
+    .link a { color: #4a90e2; text-decoration: none; }
+    .error { color: #ff4d4d; font-size: 13px; margin-bottom: 8px; }
+  </style>
+</head>
+<body>
+<header>
+  <h1 onclick="location.href='/'">My Blog</h1>
+</header>
+<div class="container">
+  <div class="box">
+    <h2>회원가입</h2>
+    <input type="email" id="email" placeholder="이메일">
+    <input type="password" id="password" placeholder="비밀번호">
+    <input type="text" id="nickname" placeholder="닉네임">
+    <div class="error" id="error"></div>
+    <button onclick="signup()">회원가입</button>
+    <div class="link">이미 계정이 있으신가요? <a href="/login.html">로그인</a></div>
+  </div>
+</div>
+<script>
+  if (localStorage.getItem('token')) location.href = '/';
+
+  async function signup() {
+    const email = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value.trim();
+    const nickname = document.getElementById('nickname').value.trim();
+
+    if (!email || !password || !nickname) {
+      document.getElementById('error').textContent = '모든 항목을 입력해주세요';
+      return;
+    }
+
+    const res = await fetch('/api/auth/signup', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password, nickname })
+    });
+
+    if (!res.ok) {
+      document.getElementById('error').textContent = '이미 사용 중인 이메일이에요';
+      return;
+    }
+
+    const data = await res.json();
+    localStorage.setItem('token', data.token);
+    localStorage.setItem('nickname', data.nickname);
+    location.href = '/';
+  }
+</script>
+</body>
+</html>
