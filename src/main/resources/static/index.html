@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Blog</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', sans-serif; background: #f9f9f9; color: #333; }
+
+    header {
+      background: #fff;
+      border-bottom: 1px solid #eee;
+      padding: 20px 0;
+      text-align: center;
+    }
+    header h1 { font-size: 28px; font-weight: 700; color: #222; }
+    header p { color: #888; font-size: 14px; margin-top: 4px; }
+
+    .container { max-width: 720px; margin: 40px auto; padding: 0 20px; }
+
+    /* 게시글 작성 폼 */
+    .write-box {
+      background: #fff;
+      border: 1px solid #eee;
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 32px;
+    }
+    .write-box h2 { font-size: 16px; margin-bottom: 16px; color: #444; }
+    .write-box input,
+    .write-box textarea {
+      width: 100%;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 14px;
+      margin-bottom: 12px;
+      outline: none;
+      font-family: inherit;
+    }
+    .write-box input:focus,
+    .write-box textarea:focus { border-color: #4a90e2; }
+    .write-box textarea { height: 100px; resize: none; }
+    .write-box button {
+      background: #222;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 24px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    .write-box button:hover { background: #444; }
+
+    /* 게시글 목록 */
+    .post-list h2 { font-size: 16px; color: #444; margin-bottom: 16px; }
+    .post-card {
+      background: #fff;
+      border: 1px solid #eee;
+      border-radius: 12px;
+      padding: 20px 24px;
+      margin-bottom: 16px;
+      transition: box-shadow 0.2s;
+    }
+    .post-card:hover { box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
+    .post-card .title { font-size: 18px; font-weight: 600; margin-bottom: 8px; }
+    .post-card .content { font-size: 14px; color: #666; line-height: 1.6; }
+    .post-card .meta {
+      font-size: 12px;
+      color: #aaa;
+      margin-top: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .delete-btn {
+      background: none;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      padding: 4px 10px;
+      font-size: 12px;
+      color: #999;
+      cursor: pointer;
+    }
+    .delete-btn:hover { border-color: #ff4d4d; color: #ff4d4d; }
+
+    .empty { text-align: center; color: #aaa; padding: 40px 0; font-size: 14px; }
+    .toast {
+      position: fixed;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #222;
+      color: #fff;
+      padding: 10px 24px;
+      border-radius: 20px;
+      font-size: 14px;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>My Blog</h1>
+  <p>나만의 블로그 포트폴리오</p>
+</header>
+
+<div class="container">
+
+  <!-- 게시글 작성 -->
+  <div class="write-box">
+    <h2>✏️ 새 게시글 작성</h2>
+    <input type="text" id="title" placeholder="제목을 입력하세요">
+    <textarea id="content" placeholder="내용을 입력하세요"></textarea>
+    <button onclick="createPost()">게시글 등록</button>
+  </div>
+
+  <!-- 게시글 목록 -->
+  <div class="post-list">
+    <h2>📋 게시글 목록</h2>
+    <div id="posts"></div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  const API = '/api/posts';
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.style.display = 'block';
+    setTimeout(() => t.style.display = 'none', 2000);
+  }
+
+  async function loadPosts() {
+    const res = await fetch(API);
+    const posts = await res.json();
+    const container = document.getElementById('posts');
+
+    if (posts.length === 0) {
+      container.innerHTML = '<div class="empty">아직 게시글이 없어요. 첫 글을 작성해보세요!</div>';
+      return;
+    }
+
+    container.innerHTML = posts.reverse().map(p => `
+      <div class="post-card">
+        <div class="title">${p.title}</div>
+        <div class="content">${p.content}</div>
+        <div class="meta">
+          <span>${new Date(p.createdAt).toLocaleDateString('ko-KR')}</span>
+          <button class="delete-btn" onclick="deletePost(${p.id})">삭제</button>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  async function createPost() {
+    const title = document.getElementById('title').value.trim();
+    const content = document.getElementById('content').value.trim();
+
+    if (!title || !content) {
+      showToast('제목과 내용을 입력해주세요!');
+      return;
+    }
+
+    await fetch(API, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title, content })
+    });
+
+    document.getElementById('title').value = '';
+    document.getElementById('content').value = '';
+    showToast('게시글이 등록됐어요!');
+    loadPosts();
+  }
+
+  async function deletePost(id) {
+    if (!confirm('삭제할까요?')) return;
+    await fetch(`${API}/${id}`, { method: 'DELETE' });
+    showToast('삭제됐어요!');
+    loadPosts();
+  }
+
+  loadPosts();
+</script>
+
+</body>
+</html>
